@@ -32,7 +32,13 @@ INSERT INTO customer
 (112, 'Natalia Pardo', 'Frutales del Pacífico', 'natalia@frupac.com',       'Cra 20 #9-33',      'Cali',        'Colombia'),
 (113, 'Erika León',    'Logística 24/7',        'erika@log247.com',         'Av 1 #100-20',      'Bogotá',      'Colombia'),
 (114, 'Hugo Nieto',    'Hotel Mar Azul',        'hugo@marazul.com',         'Cl 10 #5-99',       'Cartagena',   'Colombia'),
-(115, 'Paula Rincón',  'Café Sierra',           'paula@cafesierra.com',     'Cra 40 #55-10',     'Bogotá',      'Colombia');
+(115, 'Paula Rincón',  'Café Sierra',           'paula@cafesierra.com',     'Cra 40 #55-10',     'Bogotá',      'Colombia'),
+(116, 'Evan Turner',   'Volunteer Supplies',  'evan.turner@volsup.com',        '123 Cumberland Ave',     'Knoxville', 'USA'),
+(117, 'Alicia Carter', 'Smoky Tech LLC',      'alicia.carter@smokytech.com',   '7428 Kingston Pike',     'Knoxville', 'USA'),
+(118, 'Michael Johnson','River City Foods',   'michael.johnson@rcfoods.com',   '101 S Gay St',           'Knoxville', 'USA'),
+(119, 'Marco Gutierrez','Delta Produce',      'marco@deltaproduce.com',        '55 W Weber Ave',         'Stockton',  'USA'),
+(120, 'Samantha Lee',  'Portside Logistics',  'samantha.lee@portside-log.com', '300 E Main St',          'Stockton',  'USA'),
+(121, 'Priya Patel',   'Valley Ag Services',  'priya.patel@valleyag.com',      '445 N El Dorado St',     'Stockton',  'USA');
 /*CATEGORY*/
 INSERT INTO category
 (category_id, name, description, parent_category_id) VALUES

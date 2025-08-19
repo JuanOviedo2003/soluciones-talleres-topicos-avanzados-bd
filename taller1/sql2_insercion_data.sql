@@ -69,7 +69,10 @@ INSERT INTO product
 (209, 'Fresh Carrot',       8,  1,       2.00,  60, false),
 (210, 'Dark Chocolate',     9,  100,      4.50,  90, false),
 (211, 'Ground Coffee',     11,  250,      9.00,  55, false),
-(212, 'Sparkling Water',   12,  500,  1.50, 180, false);
+(212, 'Sparkling Water',   12,  500,  1.50, 180, false),
+(215, 'Aged Cheddar',     3, 250, 15.00, 0, true),
+(216, 'Gourmet Cream Cheese', 3, 200,  8.50, 0, true),
+(217, 'Imported Blue Cheese', 3, 150, 12.75, 0, true);
 
 /*PURCHASE*/
 INSERT INTO purchase

@@ -66,9 +66,13 @@ Ordene las filas por el número de productos descatalogados en orden descendente
 Muestre dos columnas: name (el nombre de la categoría) y discontinued_products_number.
 */
 
-SELECT * FROM category;
-SELECT * FROM product;
-
+SELECT c.name, COUNT(p.product_id) AS discontinued_products_number
+FROM category c
+JOIN product p ON c.category_id = p.category_id
+WHERE p.discontinued = true
+GROUP BY c.name
+HAVING COUNT(p.product_id) >= 3
+ORDER BY COUNT(p.product_id) DESC;
 
 
 

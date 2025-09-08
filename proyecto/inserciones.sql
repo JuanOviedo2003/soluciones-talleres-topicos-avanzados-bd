@@ -6,7 +6,7 @@ INSERT INTO role (name) VALUES
 
 -- 2. Insertar usuarios
 -- En una aplicación real, las contraseñas deben estar hasheadas.
-INSERT INTO "user" (email, name, "lastName", password) VALUES
+INSERT INTO users (email, name, "lastName", password) VALUES
 ('admin@example.com', 'Admin', 'User', 'adminpass123'),
 ('seller.jane@example.com', 'Jane', 'Doe', 'sellerpass456'),
 ('john.buyer@example.com', 'John', 'Smith', 'buyerpass789'),
@@ -66,4 +66,4 @@ INSERT INTO "_OrderProduct" ("orderId", "productId") VALUES
 -- 10. Generar facturas para las órdenes
 INSERT INTO invoice ("orderId") VALUES
 (1), -- Factura para la orden 1
-(2); -- Factura para la orden 2     
+(2); -- Factura para la orden 2

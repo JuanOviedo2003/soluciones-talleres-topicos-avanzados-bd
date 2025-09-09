@@ -1,0 +1,195 @@
+--------Procesos almacenados ------
+1.
+
+CREATE OR REPLACE FUNCTION create_user_with_address_role(
+    p_email TEXT,
+    p_name TEXT,
+    p_lastName TEXT,
+    p_password TEXT,
+    p_street TEXT,
+    p_city TEXT,
+    p_state TEXT,
+    p_zip TEXT,
+    p_roleId INT
+)
+RETURNS INT AS $$
+DECLARE
+    v_user_id INT;
+BEGIN
+    -- Insertar usuario
+    INSERT INTO users(email, name, "lastName", password)
+    VALUES (p_email, p_name, p_lastName, p_password)
+    RETURNING user_id INTO v_user_id;
+
+    -- Insertar dirección asociada
+    INSERT INTO address(street, city, state, zip, "userId")
+    VALUES (p_street, p_city, p_state, p_zip, v_user_id);
+
+    -- Asignar rol
+    INSERT INTO "_UserRole"("userId", "roleId")
+    VALUES (v_user_id, p_roleId);
+
+    RETURN v_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
+		
+
+----SCRIPT----
+SELECT create_user_with_address_role(
+    'juan@example.com',
+    'Juan',
+    'Pérez',
+    '1234segura',
+    'Calle 10',
+    'Popayán',
+    'Cauca',
+    '190001',
+    1
+);
+Descripcion
+
+---Esta función permite registrar un usuario en la base de datos junto con su dirección y rol en un solo procedimiento.
+Primero inserta los datos del usuario en la tabla users, luego guarda su dirección en la tabla address asociándola con el user_id generado, y finalmente asigna el rol correspondiente en la tabla _UserRole.
+Al finalizar, retorna el identificador del nuevo usuario.-----
+
+El script invoca la función create_user_with_address_role para crear un nuevo usuario en el sistema.
+En este caso, se registran los datos de Juan Pérez con su correo, contraseña, dirección en Popayán (Cauca) y se le asigna el rol con ID 1.
+Al ejecutarse, el proceso devuelve el user_id generado para el nuevo usuario.
+
+
+
+2. 
+
+CREATE OR REPLACE FUNCTION create_order_with_products(
+    p_userId INT,
+    p_products INT[] -- lista de product_id
+)
+RETURNS INT AS $$
+DECLARE
+    v_order_id INT;
+    v_total NUMERIC(10,2) := 0.00;
+    v_price NUMERIC(10,2);
+    v_invoice_id INT;
+    pid INT;
+BEGIN
+    -- Calcular precio total
+    FOREACH pid IN ARRAY p_products LOOP
+        SELECT price INTO v_price FROM product WHERE product_id = pid;
+        v_total := v_total + v_price;
+    END LOOP;
+
+    -- Crear orden
+    INSERT INTO "order"("userId", "totalPrice")
+    VALUES (p_userId, v_total)
+    RETURNING order_id INTO v_order_id;
+
+    -- Relacionar productos con la orden
+    FOREACH pid IN ARRAY p_products LOOP
+        INSERT INTO "_OrderProduct"("orderId", "productId")
+        VALUES (v_order_id, pid);
+    END LOOP;
+
+    -- Generar factura
+    INSERT INTO invoice("orderId")
+    VALUES (v_order_id)
+    RETURNING invoice_id INTO v_invoice_id;
+
+    RETURN v_invoice_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+USO:  SELECT create_order_with_products(1, ARRAY[2,3,4]);
+
+Descripcion 
+Esta función crea una orden de compra para un usuario. Calcula el precio total de los productos, registra la orden en la tabla order, asocia los productos en _OrderProduct, genera la factura en invoice y retorna el invoice_id.
+El script ejecuta la función create_order_with_products, creando una orden para el usuario con ID 1, que incluye los productos con IDs 2, 3 y 4.
+Al finalizar, retorna el invoice_id de la factura generada.
+
+
+--------TRIGGERS-----------------
+
+1.
+
+-- Trigger function
+CREATE OR REPLACE FUNCTION update_user_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW."updatedAt" := NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger asociado
+CREATE TRIGGER trg_update_user_timestamp
+BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION update_user_timestamp();
+
+PRUEBAS: 
+-- Insertamos un usuario
+INSERT INTO users(email, name, "lastName", password)
+VALUES ('carlos@example.com', 'Carlos', 'Ruiz', 'clave123');
+
+-- Revisamos fecha inicial
+SELECT * FROM users WHERE email = 'carlos@example.com';
+
+-- Hacemos un UPDATE
+UPDATE users SET name = 'Carlos A.' WHERE email = 'carlos@example.com';
+
+-- Verificamos que updatedAt cambió
+SELECT * FROM users WHERE email = 'carlos@example.com';
+
+Descripción 
+Este trigger actualiza automáticamente la columna updatedAt de la tabla users cada vez que se modifica un registro.
+La función update_user_timestamp asigna la fecha y hora actuales (NOW()) antes de guardar los cambios, garantizando que siempre quede registrada la última actualización del usuario.
+
+El script inserta un nuevo usuario y consulta sus datos iniciales. Luego realiza un UPDATE sobre el nombre y vuelve a consultar el registro.
+Gracias al trigger trg_update_user_timestamp, la columna updatedAt se actualiza automáticamente con la fecha y hora actuales, confirmando su correcto funcionamiento.
+
+
+2.
+-- Trigger function segundo
+CREATE OR REPLACE FUNCTION check_product_stock()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_quantity NUMERIC(10,2);
+BEGIN
+    SELECT quantity INTO v_quantity FROM product WHERE product_id = NEW."productId";
+
+    IF v_quantity <= 0 THEN
+        RAISE EXCEPTION 'El producto % no tiene stock disponible', NEW."productId";
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger asociado
+CREATE TRIGGER trg_check_product_stock
+BEFORE INSERT ON "_OrderProduct"
+FOR EACH ROW
+EXECUTE FUNCTION check_product_stock();
+
+
+PRUEBA:
+-- Insertamos un producto sin stock
+INSERT INTO product(name, description, price, "sellerId", image, quantity)
+VALUES ('Laptop sin stock', 'Laptop agotada', 1200.00, 1, 'img.jpg', 0);
+
+-- Creamos una orden
+INSERT INTO "order"("userId", "totalPrice") VALUES (1, 0);
+
+-- Intentamos asociar el producto sin stock
+INSERT INTO "_OrderProduct"("orderId", "productId")
+VALUES (1, (SELECT product_id FROM product WHERE name = 'Laptop sin stock'));
+-- 🔴 Aquí debería lanzar el error: "El producto X no tiene stock disponible"
+
+Descripcion 
+Este trigger valida el stock de un producto antes de que sea agregado a una orden en la tabla _OrderProduct.
+La función check_product_stock consulta la cantidad disponible en la tabla product y, si el valor es menor o igual a cero, lanza una excepción que impide el registro.
+De esta manera, garantiza que solo se puedan asociar a una orden productos con stock disponible.
+El script inserta un producto con cantidad en cero, crea una orden y luego intenta asociar ese producto a la orden.
+Al ejecutar el último INSERT, el trigger trg_check_product_stock valida el stock y lanza el error
